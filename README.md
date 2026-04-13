@@ -1,16 +1,35 @@
-# estetica_canina_app
+# Pet Grooming Appointment Manager App (Flutter)
 
-A new Flutter project.
+This mobile application was developed using **Flutter** to manage appointments and services for a **pet grooming business**. The app allows users to register clients and pets, schedule grooming services, track appointment status, and organize services by categories in an intuitive interface.
 
-## Getting Started
+## Features
 
-This project is a starting point for a Flutter application.
+- Appointment scheduling system
+- Status tracking (Pending, Completed, Cancelled)
+- Calendar view with visual indicators for appointments
+- Service selection by categories
+- Service cart with badge counter indicator
+- Appointment detail management
+- Local notifications (reminders 2 days before appointments)
+- Full CRUD operations for:
+  - Owners
+  - Pets
+  - Categories
+  - Services
+  - Appointments
+- Local SQLite database integration
+- Clean and user-friendly interface
+- Built using Slivers and additional Flutter widgets
 
-A few resources to get you started if this is your first Flutter project:
+## Technologies Used
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- Flutter
+- Dart
+- SQLite (sqflite)
+- Table Calendar package
+- Badges package
+- Material Design components
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Purpose
+
+This project was developed as part of a Mobile Applications course assignment, demonstrating the implementation of a complete appointment management system with local storage, calendar integration, and service tracking features.
