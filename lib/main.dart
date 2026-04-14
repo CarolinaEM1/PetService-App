@@ -4,7 +4,7 @@ import 'models/cita.dart';
 import 'models/cita_completa.dart';
 import 'screens/nueva_cita_screen.dart';
 import 'screens/detalle_cita_screen.dart';
-import 'screens/servicio_screen.dart';
+import 'screens/calendario_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Estética Canina',
-      home: const ServicioScreen(),
+      home: const ListaCitasScreen(),
     );
   }
 }
@@ -209,8 +209,22 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Citas Caninas'),
-        centerTitle: true,
-      ),
+  centerTitle: true,
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.calendar_month),
+      onPressed: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const CalendarioScreen(),
+          ),
+        );
+        cargarCitas();
+      },
+    ),
+  ],
+),
       body: Column(
         children: [
           construirFiltro(),
