@@ -4,6 +4,7 @@ import 'models/cita.dart';
 import 'models/cita_completa.dart';
 import 'screens/nueva_cita_screen.dart';
 import 'screens/detalle_cita_screen.dart';
+import 'screens/categoria_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +20,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Estética Canina',
-      home: const ListaCitasScreen(),
+      home: const CategoriaScreen(),
     );
   }
 }
