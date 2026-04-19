@@ -82,65 +82,47 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
     }
   }
 
-  void mostrarEventosDelDia(DateTime dia) {
-    final eventosDelDia = obtenerEventosDelDia(dia);
+  Color obtenerColorTextoEstatus(String estatus) {
+    switch (estatus.toLowerCase()) {
+      case 'pendiente':
+        return Colors.green;
+      case 'cancelado':
+        return Colors.red;
+      case 'completado':
+        return Colors.black87;
+      default:
+        return Colors.grey;
+    }
+  }
 
-    showDialog(
-      context: context,
-      builder: (_) {
-        return Dialog.fullscreen(
-          child: Scaffold(
-            appBar: AppBar(
-              title: const Text('Eventos del día'),
-              centerTitle: true,
-            ),
-            body: eventosDelDia.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No hay eventos',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: eventosDelDia.length,
-                    itemBuilder: (_, index) {
-                      final cita = eventosDelDia[index];
-
-                      return Card(
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: obtenerColor(cita.estatus),
-                            child: const Icon(
-                              Icons.pets,
-                              color: Colors.black,
-                            ),
-                          ),
-                          title: Text(
-                            cita.mascotaNombre,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'Dueño: ${cita.duenoNombre}\n'
-                            'Hora: ${cita.hora}\n'
-                            'Estatus: ${cita.estatus}\n'
-                            'Servicio(s): ${cita.servicios}\n'
-                            'Total: \$${cita.total.toStringAsFixed(2)}',
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+  Widget construirFilaDetalle(
+    IconData icono,
+    String titulo,
+    String valor, {
+    Color? valorColor,
+    bool boldValue = false,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icono, size: 18, color: Colors.orange.shade500),
+        const SizedBox(width: 8),
+        Text(
+          '$titulo: ',
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
           ),
-        );
-      },
+        ),
+        Expanded(
+          child: Text(
+            valor,
+            style: TextStyle(
+              color: valorColor,
+              fontWeight: boldValue ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -163,6 +145,219 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
           style: const TextStyle(fontSize: 14),
         ),
       ],
+    );
+  }
+
+  void mostrarEventosDelDia(DateTime dia) {
+    final eventosDelDia = obtenerEventosDelDia(dia);
+    final fechaTexto =
+        '${dia.day.toString().padLeft(2, '0')}/${dia.month.toString().padLeft(2, '0')}/${dia.year}';
+
+    showDialog(
+      context: context,
+      builder: (_) {
+        return Dialog.fullscreen(
+          child: Scaffold(
+            backgroundColor: Colors.orange.shade50,
+            appBar: AppBar(
+              centerTitle: true,
+              title: const Text('Eventos del día'),
+            ),
+            body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: eventosDelDia.isEmpty
+                  ? Center(
+                      child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text(
+                            'No hay eventos para este día',
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ),
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.orange.shade300,
+                                Colors.deepOrange.shade300,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.orange.shade100,
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.25),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.event_available,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Citas del $fechaTexto',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${eventosDelDia.length} evento(s) programado(s)',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.92),
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: eventosDelDia.length,
+                            itemBuilder: (_, index) {
+                              final cita = eventosDelDia[index];
+                              final color = obtenerColor(cita.estatus);
+
+                              return Card(
+                                elevation: 4,
+                                shadowColor: Colors.black12,
+                                margin: const EdgeInsets.only(bottom: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(22),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 24,
+                                            backgroundColor: color,
+                                            child: const Icon(
+                                              Icons.pets,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  cita.mascotaNombre,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 17,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  'Dueño: ${cita.duenoNombre}',
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 14),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(14),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange.shade50,
+                                          borderRadius:
+                                              BorderRadius.circular(18),
+                                          border: Border.all(
+                                            color: Colors.orange.shade100,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            construirFilaDetalle(
+                                              Icons.access_time,
+                                              'Hora',
+                                              cita.hora,
+                                            ),
+                                            const SizedBox(height: 10),
+                                            construirFilaDetalle(
+                                              Icons.flag,
+                                              'Estatus',
+                                              cita.estatus,
+                                              valorColor:
+                                                  obtenerColorTextoEstatus(
+                                                      cita.estatus),
+                                              boldValue: true,
+                                            ),
+                                            const SizedBox(height: 10),
+                                            construirFilaDetalle(
+                                              Icons.content_cut,
+                                              'Servicio(s)',
+                                              cita.servicios,
+                                            ),
+                                            const SizedBox(height: 10),
+                                            construirFilaDetalle(
+                                              Icons.attach_money,
+                                              'Total',
+                                              '\$${cita.total.toStringAsFixed(2)}',
+                                              boldValue: true,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -286,7 +481,7 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Estatus',
+                    'Leyenda de estatus',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
