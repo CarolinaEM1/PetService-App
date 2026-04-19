@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'database/db_helper.dart';
 import 'models/cita.dart';
 import 'models/cita_completa.dart';
+import 'screens/login_screen.dart';
 import 'screens/nueva_cita_screen.dart';
 import 'screens/detalle_cita_screen.dart';
 import 'screens/calendario_screen.dart';
@@ -19,10 +20,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Estética Canina',
-      home: const ListaCitasScreen(),
+      home: LoginScreen(),
     );
   }
 }
@@ -50,7 +51,7 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
       cargando = true;
     });
 
-    final List<CitaCompleta> resultado =
+    final resultado =
         await DBHelper.getCitasCompletas(estatus: filtroSeleccionado);
 
     setState(() {
@@ -100,14 +101,16 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
   }
 
   Future<void> irADetalleCita(int citaId) async {
-    final List<Cita> listaCitas = await DBHelper.getCitas();
-    final Cita citaSeleccionada =
-        listaCitas.firstWhere((cita) => cita.id == citaId);
+    final lista = await DBHelper.getCitas();
+
+    final citaSeleccionada =
+        lista.firstWhere((cita) => cita.id == citaId);
 
     final resultado = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DetalleCitaScreen(cita: citaSeleccionada),
+        builder: (context) =>
+            DetalleCitaScreen(cita: citaSeleccionada),
       ),
     );
 
@@ -118,13 +121,27 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
 
   Future<void> abrirPantalla(Widget pantalla) async {
     Navigator.pop(context);
+
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => pantalla,
       ),
     );
+
     cargarCitas();
+  }
+
+  void cerrarSesion() {
+    Navigator.pop(context);
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LoginScreen(),
+      ),
+      (route) => false,
+    );
   }
 
   Widget construirFiltro() {
@@ -169,10 +186,7 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
     final color = obtenerColorEstatus(cita.estatus);
 
     return Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 6,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: ExpansionTile(
         leading: CircleAvatar(
           backgroundColor: color,
@@ -183,55 +197,37 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
         ),
         title: Text('Mascota: ${cita.mascotaNombre}'),
         subtitle: Text('Dueño: ${cita.duenoNombre}'),
-        childrenPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 8,
-        ),
+        childrenPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              'Fecha: ${cita.fecha}',
-              style: const TextStyle(fontSize: 15),
-            ),
+            child: Text('Fecha: ${cita.fecha}'),
           ),
-          const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              'Hora: ${cita.hora}',
-              style: const TextStyle(fontSize: 15),
-            ),
+            child: Text('Hora: ${cita.hora}'),
           ),
-          const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
               'Estatus: ${cita.estatus}',
               style: TextStyle(
-                fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
             ),
           ),
-          const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              'Servicio(s): ${cita.servicios}',
-              style: const TextStyle(fontSize: 15),
-            ),
+            child: Text('Servicio(s): ${cita.servicios}'),
           ),
-          const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
               'Total: \$${cita.total.toStringAsFixed(2)}',
               style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+                  fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 10),
@@ -261,26 +257,19 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Icon(
-                  Icons.pets,
-                  size: 48,
-                  color: Colors.white,
-                ),
+                Icon(Icons.pets, size: 48, color: Colors.white),
                 SizedBox(height: 10),
                 Text(
                   'Estética Canina',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold),
                 ),
                 Text(
                   'Menú principal',
                   style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                      color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
@@ -288,9 +277,7 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
           ListTile(
             leading: const Icon(Icons.home),
             title: const Text('Citas'),
-            onTap: () {
-              Navigator.pop(context);
-            },
+            onTap: () => Navigator.pop(context),
           ),
           ListTile(
             leading: const Icon(Icons.calendar_month),
@@ -306,6 +293,13 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
             leading: const Icon(Icons.design_services),
             title: const Text('Servicios'),
             onTap: () => abrirPantalla(const ServicioScreen()),
+          ),
+          const Divider(),
+          ListTile(
+            leading:
+                const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Cerrar sesión'),
+            onTap: cerrarSesion,
           ),
         ],
       ),
@@ -326,7 +320,6 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
               slivers: [
                 SliverAppBar(
                   pinned: true,
-                  floating: false,
                   expandedHeight: 100,
                   title: const Text('Citas Caninas'),
                   centerTitle: true,
@@ -340,15 +333,17 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
                         child: Center(
                           child: Text(
                             'No hay citas registradas',
-                            style: TextStyle(fontSize: 18),
+                            style:
+                                TextStyle(fontSize: 18),
                           ),
                         ),
                       )
                     : SliverList(
-                        delegate: SliverChildBuilderDelegate(
+                        delegate:
+                            SliverChildBuilderDelegate(
                           (context, index) {
-                            final cita = citas[index];
-                            return construirTarjetaCita(cita);
+                            return construirTarjetaCita(
+                                citas[index]);
                           },
                           childCount: citas.length,
                         ),
