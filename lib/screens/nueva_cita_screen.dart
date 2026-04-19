@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:badges/badges.dart' as badges;
+
 import '../database/db_helper.dart';
 import '../models/dueno.dart';
 import '../models/mascota.dart';
@@ -7,7 +9,6 @@ import '../models/categoria.dart';
 import '../models/servicio.dart';
 import '../models/detalle_cita.dart';
 import '../models/item_servicio.dart';
-import 'package:badges/badges.dart' as badges;
 import 'bienes_agregados_screen.dart';
 
 class NuevaCitaScreen extends StatefulWidget {
@@ -27,7 +28,8 @@ class _NuevaCitaScreenState extends State<NuevaCitaScreen> {
   final TextEditingController fechaController = TextEditingController();
   final TextEditingController horaController = TextEditingController();
   final TextEditingController recordatorioController = TextEditingController();
-  final TextEditingController cantidadController = TextEditingController(text: '1');
+  final TextEditingController cantidadController =
+      TextEditingController(text: '1');
 
   String estatusSeleccionado = 'pendiente';
 
@@ -50,23 +52,6 @@ class _NuevaCitaScreenState extends State<NuevaCitaScreen> {
       categorias = resultado;
     });
   }
-
-  Future<void> abrirBienesAgregados() async {
-  final resultado = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => BienesAgregadosScreen(
-        itemsSeleccionados: itemsSeleccionados,
-      ),
-    ),
-  );
-
-  if (resultado != null && resultado is List<ItemServicio>) {
-    setState(() {
-      itemsSeleccionados = resultado;
-    });
-  }
-}
 
   Future<void> cargarServiciosPorCategoria(int categoriaId) async {
     final resultado = await DBHelper.getServiciosPorCategoria(categoriaId);
@@ -101,17 +86,27 @@ class _NuevaCitaScreenState extends State<NuevaCitaScreen> {
     );
 
     if (hora != null) {
-      final horaFormateada =
+      horaController.text =
           "${hora.hour.toString().padLeft(2, '0')}:${hora.minute.toString().padLeft(2, '0')}";
-      horaController.text = horaFormateada;
     }
   }
 
   void agregarServicio() {
-    if (servicioSeleccionado == null) return;
+    if (servicioSeleccionado == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona un servicio')),
+      );
+      return;
+    }
 
     final cantidad = int.tryParse(cantidadController.text.trim()) ?? 0;
-    if (cantidad <= 0) return;
+
+    if (cantidad <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('La cantidad debe ser mayor a 0')),
+      );
+      return;
+    }
 
     final indexExistente = itemsSeleccionados.indexWhere(
       (item) => item.servicio.id == servicioSeleccionado!.id,
@@ -131,12 +126,35 @@ class _NuevaCitaScreenState extends State<NuevaCitaScreen> {
 
       cantidadController.text = '1';
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Servicio agregado')),
+    );
   }
 
-  void eliminarItemServicio(int index) {
-    setState(() {
-      itemsSeleccionados.removeAt(index);
-    });
+  double calcularTotalEstimado() {
+    double total = 0;
+    for (final item in itemsSeleccionados) {
+      total += item.servicio.precio * item.cantidad;
+    }
+    return total;
+  }
+
+  Future<void> abrirBienesAgregados() async {
+    final resultado = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BienesAgregadosScreen(
+          itemsSeleccionados: itemsSeleccionados,
+        ),
+      ),
+    );
+
+    if (resultado != null && resultado is List<ItemServicio>) {
+      setState(() {
+        itemsSeleccionados = resultado;
+      });
+    }
   }
 
   Future<void> guardarCita() async {
@@ -203,8 +221,56 @@ class _NuevaCitaScreenState extends State<NuevaCitaScreen> {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icono),
+      filled: true,
+      fillColor: Colors.grey.shade100,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.orange, width: 2),
+      ),
+    );
+  }
+
+  Widget construirSeccion({
+    required String titulo,
+    required IconData icono,
+    required Widget child,
+  }) {
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icono, color: Colors.orange.shade400),
+                const SizedBox(width: 8),
+                Text(
+                  titulo,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            child,
+          ],
+        ),
       ),
     );
   }
@@ -224,255 +290,279 @@ class _NuevaCitaScreenState extends State<NuevaCitaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final totalEstimado = calcularTotalEstimado();
+
     return Scaffold(
       appBar: AppBar(
-         title: const Text('Nueva Cita'),
-  centerTitle: true,
-  actions: [
-    IconButton(
-      onPressed: abrirBienesAgregados,
-      icon: badges.Badge(
-        showBadge: itemsSeleccionados.isNotEmpty,
-        badgeContent: Text(
-          itemsSeleccionados.length.toString(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 10,
+        title: const Text('Nueva Cita'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: abrirBienesAgregados,
+            icon: badges.Badge(
+              showBadge: itemsSeleccionados.isNotEmpty,
+              badgeContent: Text(
+                itemsSeleccionados.length.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                ),
+              ),
+              child: const Icon(Icons.shopping_cart),
+            ),
           ),
-        ),
-        child: const Icon(Icons.shopping_cart),
+        ],
       ),
-    ),
-  ],
-),
+      backgroundColor: Colors.orange.shade50,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              TextFormField(
-                controller: nombreDuenoController,
-                decoration: decorarCampo('Nombre del dueño', Icons.person),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Ingrese el nombre del dueño';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: telefonoController,
-                keyboardType: TextInputType.phone,
-                decoration: decorarCampo('Teléfono', Icons.phone),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Ingrese el teléfono';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: nombreMascotaController,
-                decoration: decorarCampo('Nombre de la mascota', Icons.pets),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Ingrese el nombre de la mascota';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: razaController,
-                decoration: decorarCampo('Raza', Icons.content_cut),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Ingrese la raza';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: fechaController,
-                readOnly: true,
-                onTap: seleccionarFecha,
-                decoration: decorarCampo('Fecha', Icons.calendar_month),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Seleccione la fecha';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: horaController,
-                readOnly: true,
-                onTap: seleccionarHora,
-                decoration: decorarCampo('Hora', Icons.access_time),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Seleccione la hora';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: estatusSeleccionado,
-                decoration: decorarCampo('Estatus', Icons.flag),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'pendiente',
-                    child: Text('Pendiente'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'completado',
-                    child: Text('Completado'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'cancelado',
-                    child: Text('Cancelado'),
-                  ),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    estatusSeleccionado = value!;
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: recordatorioController,
-                readOnly: true,
-                decoration: decorarCampo(
-                  'Recordatorio (2 días antes)',
-                  Icons.notifications,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Agregar servicios',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              DropdownButtonFormField<int>(
-                value: categoriaSeleccionadaId,
-                decoration: decorarCampo('Categoría', Icons.category),
-                items: categorias.map((categoria) {
-                  return DropdownMenuItem<int>(
-                    value: categoria.id,
-                    child: Text(categoria.nombre),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    categoriaSeleccionadaId = value;
-                  });
-                  if (value != null) {
-                    cargarServiciosPorCategoria(value);
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
-
-              DropdownButtonFormField<Servicio>(
-                value: servicioSeleccionado,
-                decoration: decorarCampo('Servicio', Icons.design_services),
-                items: servicios.map((servicio) {
-                  return DropdownMenuItem<Servicio>(
-                    value: servicio,
-                    child: Text(
-                      '${servicio.nombre} - \$${servicio.precio.toStringAsFixed(2)}',
+              construirSeccion(
+                titulo: 'Datos del dueño',
+                icono: Icons.person,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: nombreDuenoController,
+                      decoration:
+                          decorarCampo('Nombre del dueño', Icons.person),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ingrese el nombre del dueño';
+                        }
+                        return null;
+                      },
                     ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    servicioSeleccionado = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-
-              TextFormField(
-                controller: cantidadController,
-                keyboardType: TextInputType.number,
-                decoration: decorarCampo('Cantidad', Icons.numbers),
-              ),
-              const SizedBox(height: 12),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: agregarServicio,
-                  icon: const Icon(Icons.add_shopping_cart),
-                  label: const Text('Agregar servicio'),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: telefonoController,
+                      keyboardType: TextInputType.phone,
+                      decoration: decorarCampo('Teléfono', Icons.phone),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ingrese el teléfono';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
                 ),
               ),
-
-              const SizedBox(height: 20),
-
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Servicios agregados',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              construirSeccion(
+                titulo: 'Datos de la mascota',
+                icono: Icons.pets,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: nombreMascotaController,
+                      decoration:
+                          decorarCampo('Nombre de la mascota', Icons.pets),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ingrese el nombre de la mascota';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: razaController,
+                      decoration: decorarCampo('Raza', Icons.content_cut),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ingrese la raza';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-
-              if (itemsSeleccionados.isEmpty)
-                const Text('No has agregado servicios todavía'),
-
-              if (itemsSeleccionados.isNotEmpty)
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: itemsSeleccionados.length,
-                  itemBuilder: (context, index) {
-                    final item = itemsSeleccionados[index];
-                    final subtotal = item.servicio.precio * item.cantidad;
-
-                    return Card(
-                      child: ListTile(
-                        title: Text(item.servicio.nombre),
-                        subtitle: Text(
-                          'Cantidad: ${item.cantidad}\n'
-                          'Precio: \$${item.servicio.precio.toStringAsFixed(2)}\n'
-                          'Subtotal: \$${subtotal.toStringAsFixed(2)}',
+              construirSeccion(
+                titulo: 'Información de la cita',
+                icono: Icons.calendar_month,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: fechaController,
+                      readOnly: true,
+                      onTap: seleccionarFecha,
+                      decoration:
+                          decorarCampo('Fecha', Icons.calendar_month),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Seleccione la fecha';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: horaController,
+                      readOnly: true,
+                      onTap: seleccionarHora,
+                      decoration: decorarCampo('Hora', Icons.access_time),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Seleccione la hora';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: estatusSeleccionado,
+                      decoration: decorarCampo('Estatus', Icons.flag),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'pendiente',
+                          child: Text('Pendiente'),
                         ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => eliminarItemServicio(index),
+                        DropdownMenuItem(
+                          value: 'completado',
+                          child: Text('Completado'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'cancelado',
+                          child: Text('Cancelado'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          estatusSeleccionado = value!;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: recordatorioController,
+                      readOnly: true,
+                      decoration: decorarCampo(
+                        'Recordatorio (2 días antes)',
+                        Icons.notifications,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              construirSeccion(
+                titulo: 'Agregar servicios',
+                icono: Icons.design_services,
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<int>(
+                      value: categoriaSeleccionadaId,
+                      decoration: decorarCampo('Categoría', Icons.category),
+                      items: categorias.map((categoria) {
+                        return DropdownMenuItem<int>(
+                          value: categoria.id,
+                          child: Text(categoria.nombre),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          categoriaSeleccionadaId = value;
+                        });
+                        if (value != null) {
+                          cargarServiciosPorCategoria(value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<Servicio>(
+                      value: servicioSeleccionado,
+                      decoration:
+                          decorarCampo('Servicio', Icons.design_services),
+                      items: servicios.map((servicio) {
+                        return DropdownMenuItem<Servicio>(
+                          value: servicio,
+                          child: Text(
+                            '${servicio.nombre} - \$${servicio.precio.toStringAsFixed(2)}',
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          servicioSeleccionado = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: cantidadController,
+                      keyboardType: TextInputType.number,
+                      decoration: decorarCampo('Cantidad', Icons.numbers),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: agregarServicio,
+                        icon: const Icon(Icons.add_shopping_cart),
+                        label: const Text('Agregar servicio'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.shade400,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
-
-              const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: guardarCita,
-                  child: const Text(
-                    'Guardar cita',
-                    style: TextStyle(fontSize: 16),
+              ),
+              Card(
+                elevation: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Text(
+                      'Total estimado: \$${totalEstimado.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: guardarCita,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade500,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 4,
+                  ),
+                  child: const Text(
+                    'Guardar cita',
+                    style: TextStyle(fontSize: 17),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
             ],
           ),
         ),
