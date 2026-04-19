@@ -507,31 +507,41 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
           : CustomScrollView(
               slivers: [
                 SliverAppBar(
-                  pinned: true,
-                  expandedHeight: 120,
-                  backgroundColor: Colors.orange.shade400,
-                  flexibleSpace: FlexibleSpaceBar(
-                    centerTitle: true,
-                    title: const Text(
-                      'Pet Service',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
+                pinned: true,
+                expandedHeight: 160,
+                backgroundColor: Colors.orange.shade400,
+                flexibleSpace: FlexibleSpaceBar(
+                  centerTitle: true,
+                  titlePadding: const EdgeInsets.only(bottom: 18),
+
+                  
+
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.orange.shade300,
+                          Colors.deepOrange.shade300,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
                     ),
-                    background: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.orange.shade300,
-                            Colors.deepOrange.shade300,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 45),
+                        child: Image.asset(
+                          'assets/logoPetService.png',
+                          width: 255,
+                          height: 255,
                         ),
                       ),
                     ),
                   ),
                 ),
+              ),
                 SliverToBoxAdapter(
                   child: construirResumenSuperior(),
                 ),
