@@ -5,6 +5,8 @@ class CitaCompleta {
   String fecha;
   String hora;
   String estatus;
+  String servicios;
+  double total;
 
   CitaCompleta({
     required this.id,
@@ -13,6 +15,8 @@ class CitaCompleta {
     required this.fecha,
     required this.hora,
     required this.estatus,
+    required this.servicios,
+    required this.total,
   });
 
   factory CitaCompleta.fromMap(Map<String, dynamic> map) {
@@ -23,6 +27,8 @@ class CitaCompleta {
       fecha: map['fecha'],
       hora: map['hora'],
       estatus: map['estatus'],
+      servicios: map['servicios'] ?? 'Sin servicios',
+      total: map['total'] == null ? 0.0 : (map['total'] as num).toDouble(),
     );
   }
 }

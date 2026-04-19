@@ -337,34 +337,128 @@ class DBHelper {
   // CITAS COMPLETAS CON JOIN
   // =========================
   static Future<List<CitaCompleta>> getCitasCompletas({
-    String? estatus,
-  }) async {
-    final db = await database;
+  String? estatus,
+}) async {
+  final db = await database;
 
-    String query = '''
-      SELECT 
-        citas.id,
-        mascotas.nombre AS mascota_nombre,
-        duenos.nombre AS dueno_nombre,
-        citas.fecha,
-        citas.hora,
-        citas.estatus
-      FROM citas
-      INNER JOIN mascotas ON citas.mascota_id = mascotas.id
-      INNER JOIN duenos ON mascotas.dueno_id = duenos.id
-    ''';
+  String query = '''
+    SELECT 
+      citas.id,
+      mascotas.nombre AS mascota_nombre,
+      duenos.nombre AS dueno_nombre,
+      citas.fecha,
+      citas.hora,
+      citas.estatus,
+      COALESCE(
+        GROUP_CONCAT(
+          servicios.nombre || ' x' || detalle_cita.cantidad,
+          ', '
+        ),
+        'Sin servicios'
+      ) AS servicios,
+      COALESCE(SUM(detalle_cita.cantidad * servicios.precio), 0) AS total
+    FROM citas
+    INNER JOIN mascotas ON citas.mascota_id = mascotas.id
+    INNER JOIN duenos ON mascotas.dueno_id = duenos.id
+    LEFT JOIN detalle_cita ON citas.id = detalle_cita.cita_id
+    LEFT JOIN servicios ON detalle_cita.servicio_id = servicios.id
+  ''';
 
-    List<dynamic> args = [];
+  List<dynamic> args = [];
 
-    if (estatus != null && estatus != 'todos') {
-      query += ' WHERE citas.estatus = ?';
-      args.add(estatus);
-    }
-
-    query += ' ORDER BY citas.fecha ASC, citas.hora ASC';
-
-    final List<Map<String, dynamic>> result = await db.rawQuery(query, args);
-
-    return result.map((e) => CitaCompleta.fromMap(e)).toList();
+  if (estatus != null && estatus != 'todos') {
+    query += ' WHERE citas.estatus = ?';
+    args.add(estatus);
   }
+
+  query += '''
+    GROUP BY 
+      citas.id,
+      mascotas.nombre,
+      duenos.nombre,
+      citas.fecha,
+      citas.hora,
+      citas.estatus
+    ORDER BY citas.fecha ASC, citas.hora ASC
+  ''';
+
+  final List<Map<String, dynamic>> result = await db.rawQuery(query, args);
+
+  return result.map((e) => CitaCompleta.fromMap(e)).toList();
+}
+
+  static Future<List<Map<String, dynamic>>> getDetalleCompletoCita(int citaId) async {
+  final db = await database;
+
+  return await db.rawQuery('''
+    SELECT 
+      detalle_cita.id,
+      detalle_cita.cita_id,
+      detalle_cita.servicio_id,
+      detalle_cita.cantidad,
+      servicios.nombre AS servicio_nombre,
+      servicios.precio AS servicio_precio
+    FROM detalle_cita
+    INNER JOIN servicios ON detalle_cita.servicio_id = servicios.id
+    WHERE detalle_cita.cita_id = ?
+  ''', [citaId]);
+}
+
+static Future<int> deleteDetallePorId(int detalleId) async {
+  final db = await database;
+  return await db.delete(
+    'detalle_cita',
+    where: 'id = ?',
+    whereArgs: [detalleId],
+  );
+}
+static Future<void> insertDetalleSiNoExiste({
+  required int citaId,
+  required int servicioId,
+  required int cantidad,
+}) async {
+  final db = await database;
+
+  final existente = await db.query(
+    'detalle_cita',
+    where: 'cita_id = ? AND servicio_id = ?',
+    whereArgs: [citaId, servicioId],
+  );
+
+  if (existente.isNotEmpty) {
+    final int detalleId = existente.first['id'] as int;
+    final int cantidadActual = existente.first['cantidad'] as int;
+
+    await db.update(
+      'detalle_cita',
+      {'cantidad': cantidadActual + cantidad},
+      where: 'id = ?',
+      whereArgs: [detalleId],
+    );
+  } else {
+    await db.insert(
+      'detalle_cita',
+      {
+        'cita_id': citaId,
+        'servicio_id': servicioId,
+        'cantidad': cantidad,
+      },
+    );
+  }
+}
+
+static Future<double> getTotalCita(int citaId) async {
+  final db = await database;
+
+  final resultado = await db.rawQuery('''
+    SELECT SUM(detalle_cita.cantidad * servicios.precio) AS total
+    FROM detalle_cita
+    INNER JOIN servicios ON detalle_cita.servicio_id = servicios.id
+    WHERE detalle_cita.cita_id = ?
+  ''', [citaId]);
+
+  final value = resultado.first['total'];
+  if (value == null) return 0.0;
+  return (value as num).toDouble();
+}
 }

@@ -122,7 +122,9 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
                           subtitle: Text(
                             'Dueño: ${cita.duenoNombre}\n'
                             'Hora: ${cita.hora}\n'
-                            'Estatus: ${cita.estatus}',
+                            'Estatus: ${cita.estatus}\n'
+                            'Servicio(s): ${cita.servicios}\n'
+                            'Total: \$${cita.total.toStringAsFixed(2)}',
                           ),
                         ),
                       );
