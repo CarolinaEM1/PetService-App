@@ -103,14 +103,12 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
   Future<void> irADetalleCita(int citaId) async {
     final lista = await DBHelper.getCitas();
 
-    final citaSeleccionada =
-        lista.firstWhere((cita) => cita.id == citaId);
+    final citaSeleccionada = lista.firstWhere((cita) => cita.id == citaId);
 
     final resultado = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            DetalleCitaScreen(cita: citaSeleccionada),
+        builder: (context) => DetalleCitaScreen(cita: citaSeleccionada),
       ),
     );
 
@@ -153,27 +151,51 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
     ];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Wrap(
         spacing: 8,
+        runSpacing: 8,
         children: filtros.map((filtro) {
+          final bool seleccionado = filtroSeleccionado == filtro;
+
+          String texto;
+          switch (filtro) {
+            case 'pendiente':
+              texto = 'Pendientes';
+              break;
+            case 'completado':
+              texto = 'Completados';
+              break;
+            case 'cancelado':
+              texto = 'Cancelados';
+              break;
+            default:
+              texto = 'Todos';
+          }
+
           return ChoiceChip(
             label: Text(
-              filtro == 'todos'
-                  ? 'Todos'
-                  : filtro == 'pendiente'
-                      ? 'Pendientes'
-                      : filtro == 'completado'
-                          ? 'Completados'
-                          : 'Cancelados',
+              texto,
+              style: TextStyle(
+                color: seleccionado ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            selected: filtroSeleccionado == filtro,
-            selectedColor: Colors.orange.shade300,
+            selected: seleccionado,
+            backgroundColor: Colors.white,
+            selectedColor: Colors.orange.shade400,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(
+                color: seleccionado
+                    ? Colors.orange.shade400
+                    : Colors.orange.shade100,
+              ),
+            ),
             onSelected: (selected) {
               setState(() {
                 filtroSeleccionado = filtro;
               });
-
               cargarCitas();
             },
           );
@@ -182,65 +204,216 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
     );
   }
 
+  Widget construirResumenSuperior() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.orange.shade300,
+              Colors.deepOrange.shade300,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.orange.shade100,
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.pets,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Gestión de citas',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 21,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Administra tus servicios caninos de forma rápida',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.92),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget construirTarjetaCita(CitaCompleta cita) {
     final color = obtenerColorEstatus(cita.estatus);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: ExpansionTile(
-        leading: CircleAvatar(
-          backgroundColor: color,
-          child: Icon(
-            obtenerIconoEstatus(cita.estatus),
-            color: Colors.white,
-          ),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+      child: Card(
+        elevation: 4,
+        shadowColor: Colors.black12,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
         ),
-        title: Text('Mascota: ${cita.mascotaNombre}'),
-        subtitle: Text('Dueño: ${cita.duenoNombre}'),
-        childrenPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text('Fecha: ${cita.fecha}'),
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            dividerColor: Colors.transparent,
           ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text('Hora: ${cita.hora}'),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Estatus: ${cita.estatus}',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: color,
+          child: ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            leading: CircleAvatar(
+              radius: 24,
+              backgroundColor: color,
+              child: Icon(
+                obtenerIconoEstatus(cita.estatus),
+                color: Colors.white,
               ),
             ),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text('Servicio(s): ${cita.servicios}'),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Total: \$${cita.total.toStringAsFixed(2)}',
+            title: Text(
+              cita.mascotaNombre,
               style: const TextStyle(
-                  fontWeight: FontWeight.bold),
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => irADetalleCita(cita.id),
-              icon: const Icon(Icons.edit),
-              label: const Text('Editar cita'),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Dueño: ${cita.duenoNombre}',
+                style: const TextStyle(fontSize: 14),
+              ),
             ),
+            trailing: const Icon(Icons.expand_more_rounded),
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.orange.shade100),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    construirFilaDetalle(
+                      Icons.calendar_month,
+                      'Fecha',
+                      cita.fecha,
+                    ),
+                    const SizedBox(height: 10),
+                    construirFilaDetalle(
+                      Icons.access_time,
+                      'Hora',
+                      cita.hora,
+                    ),
+                    const SizedBox(height: 10),
+                    construirFilaDetalle(
+                      Icons.flag,
+                      'Estatus',
+                      cita.estatus,
+                      valorColor: color,
+                      boldValue: true,
+                    ),
+                    const SizedBox(height: 10),
+                    construirFilaDetalle(
+                      Icons.content_cut,
+                      'Servicio(s)',
+                      cita.servicios,
+                    ),
+                    const SizedBox(height: 10),
+                    construirFilaDetalle(
+                      Icons.attach_money,
+                      'Total',
+                      '\$${cita.total.toStringAsFixed(2)}',
+                      boldValue: true,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () => irADetalleCita(cita.id),
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Editar cita'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade400,
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget construirFilaDetalle(
+    IconData icono,
+    String titulo,
+    String valor, {
+    Color? valorColor,
+    bool boldValue = false,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icono, size: 18, color: Colors.orange.shade500),
+        const SizedBox(width: 8),
+        Text(
+          '$titulo: ',
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            valor,
+            style: TextStyle(
+              color: valorColor,
+              fontWeight: boldValue ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -251,25 +424,37 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
         children: [
           DrawerHeader(
             decoration: BoxDecoration(
-              color: Colors.orange.shade400,
+              gradient: LinearGradient(
+                colors: [
+                  Colors.orange.shade300,
+                  Colors.deepOrange.shade300,
+                ],
+              ),
             ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Icon(Icons.pets, size: 48, color: Colors.white),
+                Icon(
+                  Icons.pets,
+                  size: 48,
+                  color: Colors.white,
+                ),
                 SizedBox(height: 10),
                 Text(
                   'Estética Canina',
                   style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold),
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   'Menú principal',
                   style: TextStyle(
-                      color: Colors.white70, fontSize: 14),
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
@@ -296,8 +481,7 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
           ),
           const Divider(),
           ListTile(
-            leading:
-                const Icon(Icons.logout, color: Colors.red),
+            leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Cerrar sesión'),
             onTap: cerrarSesion,
           ),
@@ -309,10 +493,14 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.orange.shade50,
       drawer: construirDrawer(),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: irANuevaCita,
-        child: const Icon(Icons.add),
+        backgroundColor: Colors.orange.shade400,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('Nueva cita'),
       ),
       body: cargando
           ? const Center(child: CircularProgressIndicator())
@@ -320,9 +508,32 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
               slivers: [
                 SliverAppBar(
                   pinned: true,
-                  expandedHeight: 100,
-                  title: const Text('Citas Caninas'),
-                  centerTitle: true,
+                  expandedHeight: 120,
+                  backgroundColor: Colors.orange.shade400,
+                  flexibleSpace: FlexibleSpaceBar(
+                    centerTitle: true,
+                    title: const Text(
+                      'Pet Service',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    background: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.orange.shade300,
+                            Colors.deepOrange.shade300,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: construirResumenSuperior(),
                 ),
                 SliverToBoxAdapter(
                   child: construirFiltro(),
@@ -333,17 +544,14 @@ class _ListaCitasScreenState extends State<ListaCitasScreen> {
                         child: Center(
                           child: Text(
                             'No hay citas registradas',
-                            style:
-                                TextStyle(fontSize: 18),
+                            style: TextStyle(fontSize: 18),
                           ),
                         ),
                       )
                     : SliverList(
-                        delegate:
-                            SliverChildBuilderDelegate(
+                        delegate: SliverChildBuilderDelegate(
                           (context, index) {
-                            return construirTarjetaCita(
-                                citas[index]);
+                            return construirTarjetaCita(citas[index]);
                           },
                           childCount: citas.length,
                         ),
