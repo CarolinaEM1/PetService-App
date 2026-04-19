@@ -95,7 +95,7 @@ class _DetalleCitaScreenState extends State<DetalleCitaScreen> {
       );
     }
 
-    DateTime? fecha = await showDatePicker(
+    final fecha = await showDatePicker(
       context: context,
       initialDate: fechaInicial,
       firstDate: DateTime(2024),
@@ -106,7 +106,7 @@ class _DetalleCitaScreenState extends State<DetalleCitaScreen> {
       fechaController.text =
           "${fecha.year.toString().padLeft(4, '0')}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}";
 
-      DateTime fechaRecordatorio = fecha.subtract(const Duration(days: 2));
+      final fechaRecordatorio = fecha.subtract(const Duration(days: 2));
       recordatorioController.text =
           "${fechaRecordatorio.year.toString().padLeft(4, '0')}-${fechaRecordatorio.month.toString().padLeft(2, '0')}-${fechaRecordatorio.day.toString().padLeft(2, '0')}";
     }
@@ -123,7 +123,7 @@ class _DetalleCitaScreenState extends State<DetalleCitaScreen> {
       );
     }
 
-    TimeOfDay? hora = await showTimePicker(
+    final hora = await showTimePicker(
       context: context,
       initialTime: horaInicial,
     );
@@ -168,7 +168,16 @@ class _DetalleCitaScreenState extends State<DetalleCitaScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Eliminar cita'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.delete_outline, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Eliminar cita'),
+            ],
+          ),
           content: const Text('¿Seguro que deseas eliminar esta cita?'),
           actions: [
             TextButton(
@@ -177,6 +186,13 @@ class _DetalleCitaScreenState extends State<DetalleCitaScreen> {
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               child: const Text('Eliminar'),
             ),
           ],
@@ -208,7 +224,16 @@ class _DetalleCitaScreenState extends State<DetalleCitaScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Eliminar servicio'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.delete_outline, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Eliminar servicio'),
+            ],
+          ),
           content: const Text('¿Deseas eliminar este servicio de la cita?'),
           actions: [
             TextButton(
@@ -217,6 +242,13 @@ class _DetalleCitaScreenState extends State<DetalleCitaScreen> {
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               child: const Text('Eliminar'),
             ),
           ],
@@ -275,8 +307,56 @@ class _DetalleCitaScreenState extends State<DetalleCitaScreen> {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icono),
+      filled: true,
+      fillColor: Colors.grey.shade100,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.orange, width: 2),
+      ),
+    );
+  }
+
+  Widget construirSeccion({
+    required String titulo,
+    required IconData icono,
+    required Widget child,
+  }) {
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icono, color: Colors.orange.shade400),
+                const SizedBox(width: 8),
+                Text(
+                  titulo,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            child,
+          ],
+        ),
       ),
     );
   }
@@ -293,6 +373,7 @@ class _DetalleCitaScreenState extends State<DetalleCitaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.orange.shade50,
       appBar: AppBar(
         title: const Text('Detalle de Cita'),
         centerTitle: true,
@@ -308,203 +389,237 @@ class _DetalleCitaScreenState extends State<DetalleCitaScreen> {
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Editar cita de la mascota ID: ${widget.cita.mascotaId}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: fechaController,
-                readOnly: true,
-                onTap: seleccionarFecha,
-                decoration: decorarCampo('Fecha', Icons.calendar_month),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Seleccione la fecha';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: horaController,
-                readOnly: true,
-                onTap: seleccionarHora,
-                decoration: decorarCampo('Hora', Icons.access_time),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Seleccione la hora';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: estatusSeleccionado,
-                decoration: decorarCampo('Estatus', Icons.flag),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'pendiente',
-                    child: Text('Pendiente'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'completado',
-                    child: Text('Completado'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'cancelado',
-                    child: Text('Cancelado'),
-                  ),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    estatusSeleccionado = value!;
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: recordatorioController,
-                readOnly: true,
-                decoration: decorarCampo(
-                  'Recordatorio',
-                  Icons.notifications,
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Agregar servicio a la cita',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<int>(
-                value: categoriaSeleccionadaId,
-                decoration: decorarCampo('Categoría', Icons.category),
-                items: categorias.map((categoria) {
-                  return DropdownMenuItem<int>(
-                    value: categoria.id,
-                    child: Text(categoria.nombre),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    categoriaSeleccionadaId = value;
-                  });
-                  if (value != null) {
-                    cargarServiciosPorCategoria(value);
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<Servicio>(
-                value: servicioSeleccionado,
-                decoration: decorarCampo('Servicio', Icons.design_services),
-                items: servicios.map((servicio) {
-                  return DropdownMenuItem<Servicio>(
-                    value: servicio,
-                    child: Text(
-                      '${servicio.nombre} - \$${servicio.precio.toStringAsFixed(2)}',
+              construirSeccion(
+                titulo: 'Información de la cita',
+                icono: Icons.calendar_month,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: fechaController,
+                      readOnly: true,
+                      onTap: seleccionarFecha,
+                      decoration: decorarCampo('Fecha', Icons.calendar_month),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Seleccione la fecha';
+                        }
+                        return null;
+                      },
                     ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    servicioSeleccionado = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: cantidadController,
-                keyboardType: TextInputType.number,
-                decoration: decorarCampo('Cantidad', Icons.numbers),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: agregarServicioACita,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Agregar servicio'),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Servicios de la cita',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              cargandoDetalle
-                  ? const Center(child: CircularProgressIndicator())
-                  : detalleServicios.isEmpty
-                      ? const Text('No hay servicios asociados a esta cita')
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: detalleServicios.length,
-                          itemBuilder: (context, index) {
-                            final item = detalleServicios[index];
-                            final double precio =
-                                (item['servicio_precio'] as num).toDouble();
-                            final int cantidad = item['cantidad'] as int;
-                            final double subtotal = precio * cantidad;
-
-                            return Card(
-                              child: ListTile(
-                                title: Text(item['servicio_nombre']),
-                                subtitle: Text(
-                                  'Cantidad: $cantidad\n'
-                                  'Precio: \$${precio.toStringAsFixed(2)}\n'
-                                  'Subtotal: \$${subtotal.toStringAsFixed(2)}',
-                                ),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () =>
-                                      eliminarServicioDetalle(item['id'] as int),
-                                ),
-                              ),
-                            );
-                          },
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: horaController,
+                      readOnly: true,
+                      onTap: seleccionarHora,
+                      decoration: decorarCampo('Hora', Icons.access_time),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Seleccione la hora';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: estatusSeleccionado,
+                      decoration: decorarCampo('Estatus', Icons.flag),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'pendiente',
+                          child: Text('Pendiente'),
                         ),
-              const SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.blueGrey.shade50,
-                  borderRadius: BorderRadius.circular(12),
+                        DropdownMenuItem(
+                          value: 'completado',
+                          child: Text('Completado'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'cancelado',
+                          child: Text('Cancelado'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          estatusSeleccionado = value!;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: recordatorioController,
+                      readOnly: true,
+                      decoration: decorarCampo('Recordatorio', Icons.notifications),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  'Total de la cita: \$${totalCita.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+              ),
+              construirSeccion(
+                titulo: 'Agregar servicio a la cita',
+                icono: Icons.design_services,
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<int>(
+                      value: categoriaSeleccionadaId,
+                      decoration: decorarCampo('Categoría', Icons.category),
+                      items: categorias.map((categoria) {
+                        return DropdownMenuItem<int>(
+                          value: categoria.id,
+                          child: Text(categoria.nombre),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          categoriaSeleccionadaId = value;
+                        });
+                        if (value != null) {
+                          cargarServiciosPorCategoria(value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<Servicio>(
+                      value: servicioSeleccionado,
+                      decoration: decorarCampo('Servicio', Icons.content_cut),
+                      items: servicios.map((servicio) {
+                        return DropdownMenuItem<Servicio>(
+                          value: servicio,
+                          child: Text(
+                            '${servicio.nombre} - \$${servicio.precio.toStringAsFixed(2)}',
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          servicioSeleccionado = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: cantidadController,
+                      keyboardType: TextInputType.number,
+                      decoration: decorarCampo('Cantidad', Icons.numbers),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: agregarServicioACita,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Agregar servicio'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.shade400,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              construirSeccion(
+                titulo: 'Servicios de la cita',
+                icono: Icons.shopping_bag,
+                child: cargandoDetalle
+                    ? const Center(child: CircularProgressIndicator())
+                    : detalleServicios.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'No hay servicios asociados a esta cita',
+                              style: TextStyle(fontSize: 15),
+                            ),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: detalleServicios.length,
+                            itemBuilder: (context, index) {
+                              final item = detalleServicios[index];
+                              final double precio =
+                                  (item['servicio_precio'] as num).toDouble();
+                              final int cantidad = item['cantidad'] as int;
+                              final double subtotal = precio * cantidad;
+
+                              return Card(
+                                color: Colors.orange.shade50,
+                                elevation: 1,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: Colors.orange.shade200,
+                                    child: const Icon(
+                                      Icons.content_cut,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  title: Text(item['servicio_nombre']),
+                                  subtitle: Text(
+                                    'Cantidad: $cantidad\n'
+                                    'Precio: \$${precio.toStringAsFixed(2)}\n'
+                                    'Subtotal: \$${subtotal.toStringAsFixed(2)}',
+                                  ),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () =>
+                                        eliminarServicioDetalle(item['id'] as int),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+              ),
+              Card(
+                elevation: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Text(
+                      'Total de la cita: \$${totalCita.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 54,
                 child: ElevatedButton(
                   onPressed: actualizarCita,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade500,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 4,
+                  ),
                   child: const Text(
                     'Actualizar cita',
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 17),
                   ),
                 ),
               ),
+              const SizedBox(height: 18),
             ],
           ),
         ),
